@@ -1,17 +1,49 @@
 import os
+import camelot
 import pandas as pd
+import pdfplumber
 
-class extract:
-    FOLDER = r'D:\PROJECTS\python-automation\pdf'
-    FILENAME ='Serie Ibiza-1-1-3.pdf'
-    FILE_PATH = os.path.join(FOLDER, FILENAME)
 
-    def __init__(self,FILE_PATH):
-        self.FILE_PATH = FILE_PATH
+class Extract:
+    def __init__(self, pdf_path: str):
+        self.pdf_path = pdf_path
 
-    def extract_tables(self):
-        df = pd.read_pdf(self.FILE_PATH)
+    def extract_tables(self) -> pd.DataFrame:
+        try:
+            tables = camelot.read_pdf(
+                self.pdf_path,
+                pages="all",
+                flavor="stream"
+                )
+            dfs = [table.df for table in tables]
+            combined_df = pd.concat(dfs, ignore_index=True)
 
-    def extract_features(self):
+        except Exception as e:
+            print(f"Error extracting tables: {e}")
+            
+        return combined_df
 
-    def detect_bullets(self):
+    def extract_features(self) -> list:
+        features = []
+
+        with pdfplumber.open(self.pdf_path) as pdf:
+            for page in pdf.pages:
+                text = page.extract_text()
+                if text:
+                    for line in text.split("\n"):
+                        if self.detect_bullets(line):
+                            features.append(line.strip())
+
+        return features
+
+    def detect_bullets(self, line: str) -> bool:
+        bullets = ["•", "▪", "●", "-"]
+        return any(bullet in line for bullet in bullets)
+
+if __name__ == "__main__":
+    PDF_PATH = os.path.join("pdf", "Serie Ibiza-1-1-3.pdf")
+    extractor = Extract(PDF_PATH)
+    tables_df = extractor.extract_tables()
+    features = extractor.extract_features()
+    print("Extracted Tables DataFrame:")
+    print(tables_df)

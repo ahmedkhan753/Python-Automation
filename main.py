@@ -1,16 +1,10 @@
-# This is a sample Python script.
+from ingestion.extract import Extract
+import os
 
-# Press Ctrl+F5 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
+PDF_PATH = os.path.join("pdf", "Serie Ibiza-1-1-3.pdf")
 
+extractor = Extract(PDF_PATH)
 
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press F9 to toggle the breakpoint.
+tables_df = extractor.extract_tables()
+features = extractor.extract_features()
 
-
-# Press the green button in the gutter to run the script.
-if __name__ == '__main__':
-    print_hi('PyCharm')
-
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
