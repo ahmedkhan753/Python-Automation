@@ -1,15 +1,22 @@
-class transform:
-    def __init__(self):
-        pass
+class Transform:
+    def __init__(self, table_df, features):
+        self.table_df = table_df
+        self.features = features
+
     def clean_data(self):
-        pass
+        """Remove noise, empty rows, broken lines"""
+
     def normalize_data(self):
-        pass
+        """Standardize column names, values, formats"""
+
     def symbol_to_logic(self):
-        pass
+        """Convert bullets/dots into Yes/No"""
+
     def keyword_mapping(self):
-        pass
+        """Force features into correct categories"""
+
     def final_data_model(self):
-        pass
+        """Create final DataFrame schema"""
+
     def validate_data(self):
-        pass
+        """Identify missing or invalid fields"""
