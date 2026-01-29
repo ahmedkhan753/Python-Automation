@@ -167,12 +167,25 @@ class Transform:
         table_df["key"] = 1
         feature_df["key"] = 1
 
-        self.final_df = (
+        merged_df = (
             pd.merge(table_df, feature_df, on="key")
             .drop(columns="key")
             .reset_index(drop=True)
             .fillna("N/A")
         )
+
+        # Remove columns that are entirely NaN or empty
+        merged_df = merged_df.dropna(axis=1, how='all')
+
+        # Remove columns with no useful values (e.g., all 'N/A' or empty strings)
+        useful_columns = []
+        for col in merged_df.columns:
+            if pd.isna(col):
+                continue
+            if merged_df[col].notna().any() and not (merged_df[col] == 'N/A').all() and not (merged_df[col] == '').all():
+                useful_columns.append(col)
+
+        self.final_df = merged_df[useful_columns]
 
     # 8️ VALIDATION (DO NOT FIX DATA)
     def validate_data(self):

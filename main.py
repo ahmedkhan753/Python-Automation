@@ -13,6 +13,8 @@ features = extractor.extract_features()
 
 transformer = Transform(tables_df, features)
 final_df = transformer.run()
+print("Final Transformed DataFrame columns:")
+print(final_df.columns.tolist())
 print("Final Transformed DataFrame:")
 print(final_df)
 
