@@ -10,7 +10,7 @@ class Transform:
         self.feature_df = None
         self.final_df = None
 
-    # 1️⃣ CLEAN RAW TABLE DATA
+    # 1️ CLEAN RAW TABLE DATA
     def clean_data(self):
         df = self.table_df.copy()
 
@@ -35,14 +35,14 @@ class Transform:
         ]
 
         def is_noise(row):
-            row_text = " ".join(row.astype(str))
+            row_text = " ".join(row.fillna("").astype(str).tolist())
             return any(re.search(p, row_text, re.IGNORECASE) for p in noise_patterns)
 
         df = df[~df.apply(is_noise, axis=1)]
 
         self.table_df = df.reset_index(drop=True)
 
-    # 2️⃣ NORMALIZE COLUMN NAMES
+    # 2️ NORMALIZE COLUMN NAMES
     def normalize_data(self):
         df = self.table_df.copy()
 
@@ -57,7 +57,7 @@ class Transform:
 
         self.table_df = df
 
-    # 3️⃣ CLEAN & NORMALIZE FEATURE TEXT
+    # 3️ CLEAN & NORMALIZE FEATURE TEXT
     def normalize_feature_text(self, text: str) -> str:
         # Fix broken words caused by PDF spacing
         fixes = {
@@ -75,7 +75,7 @@ class Transform:
 
         return text.strip()
 
-    # 4️⃣ BULLET / SYMBOL → LOGIC
+    # 4️ BULLET / SYMBOL → LOGIC
     def symbol_to_logic(self):
         rows = []
 
@@ -100,7 +100,7 @@ class Transform:
 
         self.feature_df = pd.DataFrame(rows)
 
-    # 5️⃣ KEYWORD → CATEGORY MAPPING
+    # 5️ KEYWORD → CATEGORY MAPPING
     def keyword_mapping(self):
         KEYWORD_CATEGORY_MAP = {
             "lenkrad": "Interior",
@@ -124,7 +124,7 @@ class Transform:
 
         self.feature_df["Category"] = self.feature_df["Feature"].apply(map_category)
 
-    # 6️⃣ OPTIONAL: GERMAN → ENGLISH TRANSLATION (SAFE)
+    # 6️ GERMAN → ENGLISH TRANSLATION 
     def translate_features(self):
         TRANSLATION_MAP = {
             "Multifunktionslenkrad": "Multifunction Steering Wheel",
@@ -144,7 +144,7 @@ class Transform:
 
         self.feature_df["Feature"] = self.feature_df["Feature"].apply(translate)
 
-    # 7️⃣ FINAL DATA MODEL
+    # 7️ FINAL DATA MODEL
     def final_data_model(self):
         table_df = self.table_df.copy()
         feature_df = self.feature_df.copy()
@@ -159,11 +159,11 @@ class Transform:
             .reset_index(drop=True)
         )
 
-    # 8️⃣ VALIDATION (DO NOT FIX DATA)
+    # 8️ VALIDATION (DO NOT FIX DATA)
     def validate_data(self):
         return self.final_df
 
-    # 🚀 RUN PIPELINE
+    #  RUN PIPELINE
     def run(self) -> pd.DataFrame:
         self.clean_data()
         self.normalize_data()
