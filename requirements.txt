@@ -1,0 +1,6 @@
+pdfplumber
+camelot-py[cv]
+pandas
+openpyxl
+xlsxwriter
+numpy
