@@ -157,6 +157,7 @@ class Transform:
             pd.merge(table_df, feature_df, on="key")
             .drop(columns="key")
             .reset_index(drop=True)
+            .fillna("( not specified )")
         )
 
     # 8️ VALIDATION (DO NOT FIX DATA)
