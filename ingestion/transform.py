@@ -38,7 +38,21 @@ class Transform:
             row_text = " ".join(row.fillna("").astype(str).tolist())
             return any(re.search(p, row_text, re.IGNORECASE) for p in noise_patterns)
 
-        df = df[~df.apply(is_noise, axis=1)]
+        # Find header row
+        header_idx = None
+        for i, row in df.iterrows():
+            row_str = " ".join(row.fillna("").astype(str).tolist())
+            if "Motor" in row_str and "Getriebe" in row_str:
+                header_idx = i
+                break
+        
+        if header_idx is not None:
+            # Set header
+            df.columns = df.iloc[header_idx]
+            # Drop rows including and before header
+            df = df.iloc[header_idx + 1:]
+        else:
+            print("Warning: Header not found! Using default columns.")
 
         self.table_df = df.reset_index(drop=True)
 
@@ -157,7 +171,7 @@ class Transform:
             pd.merge(table_df, feature_df, on="key")
             .drop(columns="key")
             .reset_index(drop=True)
-            .fillna("( not specified )")
+            .fillna("N/A")
         )
 
     # 8️ VALIDATION (DO NOT FIX DATA)
