@@ -106,7 +106,11 @@ class Transform:
                 "Feature": clean_text,
                 "Included": "Yes" if has_feature else ""
             })
-        self.feature_df = pd.DataFrame(rows)
+        if not rows:
+            # Handle empty features case
+            self.feature_df = pd.DataFrame(columns=["Feature", "Included"])
+        else:
+            self.feature_df = pd.DataFrame(rows)
 
     # 5️⃣ KEYWORD → CATEGORY MAPPING
     def keyword_mapping(self):
@@ -159,6 +163,11 @@ class Transform:
                 if keyword in feature.lower():
                     return category
             return "_Innen" # Default to _Innen as seen in many rows
+
+        if self.feature_df.empty:
+            self.feature_df["type"] = []
+            self.feature_df["name"] = []
+            return
 
         self.feature_df["type"] = self.feature_df["Feature"].apply(map_category)
         self.feature_df.rename(columns={"Feature": "name"}, inplace=True)

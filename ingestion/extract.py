@@ -28,22 +28,20 @@ class Extract:
                 if text:
                     # Pre-clean text: handle hyphenation and CID tags
                     text = re.sub(r'(\w+)-\n\s*(\w+)', r'\1\2', text)
-                    text = re.sub(r'\(cid:\d+\)', '', text)
                     
                     for line in text.split("\n"):
-                        # Only keep lines that have a bullet AND don't look like engine specs
-                        if self.detect_bullets(line):
-                            # Exclude lines starting with engine specs like "1.0 TSI" or "1.5 TSI"
+                        # Features often end with (cid:127) or start with bullets
+                        if self.detect_bullets(line) or "(cid:127)" in line:
+                            # Exclude lines starting with engine specs
                             if re.match(r'^\s*\d+\.\d+\s*TSI', line, re.IGNORECASE):
                                 continue
                             
-                            # Final clean for the specific line
-                            clean_line = re.sub(r'\(cid:\d+\)', '', line)
-                            features.append(clean_line.strip())
+                            features.append(line.strip())
         return features
 
     def detect_bullets(self, line: str) -> bool:
-        bullets = ["•", "▪", "●"]
+        # Common symbols used as bullets or indicators in this PDF
+        bullets = ["•", "▪", "●", "·"]
         return any(bullet in line for bullet in bullets)
 
 
