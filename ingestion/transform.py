@@ -56,15 +56,34 @@ class Transform:
 
     # 3️⃣ CLEAN & NORMALIZE FEATURE TEXT
     def normalize_feature_text(self, text: str) -> str:
-        # Fix broken words caused by PDF spacing
+        # Fix broken words caused by PDF spacing (e.g., "B eifahrer" -> "Beifahrer", "S icherheit" -> "Sicherheit")
+        # Handle cases like "B eifahrer" or "S icherheit"
+        text = re.sub(r'([A-Z])\s+([a-z])', r'\1\2', text)
+        # Handle cases like "Sicher heit" (lowercase-space-lowercase) - be careful here, only if single space
+        # But for now, let's focus on the observed ones.
+        
+        # Specific fixes
         fixes = {
-            r"\bB\s+eifahrer\b": "Beifahrer",
             r"\bm\s+it\b": "mit",
             r"\bT\s+SI\b": "TSI",
             r"\bA\s+ssist\b": "Assist",
+            r"\bu\s+nd\b": "und",
+            r"\ba\s+uf\b": "auf",
         }
         for pattern, replacement in fixes.items():
             text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
+        
+        # Remove CID artifacts
+        text = re.sub(r"\(cid:\d+\)", "", text)
+        
+        # Remove trailing noise/hyphens
+        text = re.sub(r"\s*--.*$", "", text)
+        
+        # Remove leading bullets if they survived
+        bullets = ["•", "▪", "●", "·"]
+        for b in bullets:
+            text = text.replace(b, "")
+            
         # Remove multiple spaces
         text = re.sub(r"\s{2,}", " ", text)
         return text.strip()
@@ -92,55 +111,77 @@ class Transform:
     # 5️⃣ KEYWORD → CATEGORY MAPPING
     def keyword_mapping(self):
         KEYWORD_CATEGORY_MAP = {
-            "lenkrad": "Interior",
-            "cockpit": "Interior",
-            "klimaanlage": "Interior",
-            "sitz": "Interior",
-            "scheinwerfer": "Exterior",
-            "led": "Exterior",
-            "felgen": "Exterior",
-            "airbag": "Safety",
-            "assist": "Safety",
-            "kamera": "Safety",
-            "brems": "Safety",
+            "airbag": "_Sicherheit",
+            "assist": "_Sicherheit",
+            "kamera": "_Sicherheit",
+            "brems": "_Sicherheit",
+            "stabilitäts": "_Sicherheit",
+            "pannen": "_Sicherheit",
+            "sicherheits": "_Sicherheit",
+            "parkhilfe": "_Sicherheit",
+            "spur": "_Sicherheit",
+            "müdigkeit": "_Sicherheit",
+            "felgen": "_Räder & Co",
+            "reifen": "_Räder & Co",
+            "rad": "_Räder & Co",
+            "reifendruck": "_Räder & Co",
+            "infotainment": "_Infotainment",
+            "radio": "_Infotainment",
+            "full link": "_Infotainment",
+            "cockpit": "_Infotainment",
+            "connect": "_Infotainment",
+            "media": "_Infotainment",
+            "bluetooth": "_Infotainment",
+            "usb": "_Infotainment",
+            "lautsprecher": "_Infotainment",
+            "lenkrad": "_Innen",
+            "klimaanlage": "_Innen",
+            "sitz": "_Innen",
+            "innenspiegel": "_Innen",
+            "fensterheber": "_Innen",
+            "schaltknauf": "_Innen",
+            "dachhimmel": "_Innen",
+            "mittelarmlehne": "_Innen",
+            "komfort": "_Innen",
+            "geschwindigkeits": "_Innen",
+            "scheinwerfer": "_Außen",
+            "led": "_Außen",
+            "außenspiegel": "_Außen",
+            "lackiert": "_Außen",
+            "getönte": "_Außen",
+            "nebelscheinwerfer": "_Außen",
+            "heckleuchten": "_Außen",
+            "stoßfänger": "_Außen",
         }
 
         def map_category(feature: str) -> str:
             for keyword, category in KEYWORD_CATEGORY_MAP.items():
                 if keyword in feature.lower():
                     return category
-            return "Uncategorized"
+            return "_Innen" # Default to _Innen as seen in many rows
 
-        self.feature_df["Category"] = self.feature_df["Feature"].apply(map_category)
+        self.feature_df["type"] = self.feature_df["Feature"].apply(map_category)
+        self.feature_df.rename(columns={"Feature": "name"}, inplace=True)
 
 
     # 7️⃣ FINAL DATA MODEL
     def final_data_model(self):
-        table_df = self.table_df.copy()
         feature_df = self.feature_df.copy()
-        # Cartesian join: features apply to all variants
-        table_df["key"] = 1
-        feature_df["key"] = 1
-        merged_df = (
-            pd.merge(table_df, feature_df, on="key")
-            .drop(columns="key")
-            .reset_index(drop=True)
-            .fillna("N/A")
-        )
-        # Remove columns that are entirely NaN or empty
-        merged_df = merged_df.dropna(axis=1, how='all')
-        # Remove columns with no useful values (e.g., all 'N/A' or empty strings)
-        useful_columns = []
-        for col in merged_df.columns:
-            if pd.isna(col):
-                continue
-            if (
-                merged_df[col].notna().any()
-                and not (merged_df[col] == 'N/A').all()
-                and not (merged_df[col] == '').all()
-            ):
-                useful_columns.append(col)
-        self.final_df = merged_df[useful_columns]
+        
+        # Create the required columns with default values as per screenshot
+        feature_df["online"] = 1
+        feature_df["details"] = 1
+        feature_df["code"] = 1
+        feature_df["export_excel"] = 1
+        feature_df["attribute"] = 1
+        feature_df["FILTERABLE"] = 1
+        feature_df["Style"] = 1
+        feature_df["cat"] = 1
+        feature_df["S"] = 1
+        
+        # Select and reorder columns
+        target_cols = ["name", "type", "online", "details", "code", "export_excel", "attribute", "FILTERABLE", "Style", "cat", "S"]
+        self.final_df = feature_df[target_cols]
 
     # 8️⃣ VALIDATION (DO NOT FIX DATA)
     def validate_data(self):

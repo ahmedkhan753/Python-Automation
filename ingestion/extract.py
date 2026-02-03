@@ -2,6 +2,7 @@ import os
 import camelot
 import pandas as pd
 import pdfplumber
+import re
 
 
 class Extract:
@@ -25,13 +26,24 @@ class Extract:
             for page in pdf.pages:
                 text = page.extract_text()
                 if text:
+                    # Pre-clean text: handle hyphenation and CID tags
+                    text = re.sub(r'(\w+)-\n\s*(\w+)', r'\1\2', text)
+                    text = re.sub(r'\(cid:\d+\)', '', text)
+                    
                     for line in text.split("\n"):
+                        # Only keep lines that have a bullet AND don't look like engine specs
                         if self.detect_bullets(line):
-                            features.append(line.strip())
+                            # Exclude lines starting with engine specs like "1.0 TSI" or "1.5 TSI"
+                            if re.match(r'^\s*\d+\.\d+\s*TSI', line, re.IGNORECASE):
+                                continue
+                            
+                            # Final clean for the specific line
+                            clean_line = re.sub(r'\(cid:\d+\)', '', line)
+                            features.append(clean_line.strip())
         return features
 
     def detect_bullets(self, line: str) -> bool:
-        bullets = ["•", "▪", "●", "-"]
+        bullets = ["•", "▪", "●"]
         return any(bullet in line for bullet in bullets)
 
 
