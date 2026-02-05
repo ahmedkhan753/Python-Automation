@@ -60,14 +60,18 @@ class Transform:
         if not text:
             return ""
 
-        # 1. Join single characters detached from words (e.g., "v orn", "a b", "F R", "1 5-Zoll")
-        # Handle cases like "v orn", "h inten", "a b", "i n", "f ür"
-        text = re.sub(r'\b([a-z])\s+(?=[a-z])', r'\1', text)
+        # 1. Join single characters (including umlauts) detached from words
+        # This handles "B eifahrer", "ü ber", "v orn", "h inten", "a b", "F R", "1 5-Zoll"
+        # Join lowercase/umlaut prefixes: "v orn" -> "vorn", "ü ber" -> "über"
+        text = re.sub(r'\b([a-zäöü])\s+(?=[a-zäöü])', r'\1', text)
         
-        # Handle specific uppercase/model detachments like "F R", "L ED"
-        text = re.sub(r'\b([A-Z])\s+(?=[A-Z])', r'\1', text)
+        # Join uppercase prefixes to words: "B eifahrer" -> "Beifahrer"
+        text = re.sub(r'\b([A-ZÄÖÜ])\s+(?=[a-zäöü])', r'\1', text)
         
-        # Handle number spacing in specs (e.g., "1 5-Zoll", "1 6-Zoll")
+        # Join uppercase models/abbreviations: "F R" -> "FR", "L ED" -> "LED"
+        text = re.sub(r'\b([A-ZÄÖÜ])\s+(?=[A-ZÄÖÜ])', r'\1', text)
+        
+        # Join number spacing in specs: "1 5-Zoll" -> "15-Zoll"
         text = re.sub(r'\b(\d)\s+(?=\d)', r'\1', text)
 
         # 2. Specific keyword fixes for German automotive context
@@ -81,11 +85,11 @@ class Transform:
         for pattern, replacement in fixes.items():
             text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
 
-        # 3. Remove trailing noise: dashes, double dashes, especially at the end
-        # Remove patterns like "- -", "--", or lone "-" at the end of the string
-        text = re.sub(r'\s*[-–—\s]+$', '', text)
+        # 3. Aggressive trailing noise removal
+        # Removes double dashes, lone dashes, and whitespace at the end
+        text = re.sub(r'[\s\-–—]+$', '', text)
         
-        # 4. Remove internal double dashes often used as fillers in tables
+        # 4. Remove internal double dashes often used as fillers
         text = text.replace(" - -", "").replace(" --", "")
 
         # 5. Remove CID artifacts
@@ -140,10 +144,10 @@ class Transform:
             "müdigkeit": "_Sicherheit",
             "felgen": "_Räder & Co",
             "reifen": "_Räder & Co",
-            "rad": "_Räder & Co",
             "reifendruck": "_Räder & Co",
-            "infotainment": "_Infotainment",
+            "rad": "_Räder & Co",
             "radio": "_Infotainment",
+            "infotainment": "_Infotainment",
             "full link": "_Infotainment",
             "cockpit": "_Infotainment",
             "connect": "_Infotainment",
@@ -153,6 +157,7 @@ class Transform:
             "lautsprecher": "_Infotainment",
             "lenkrad": "_Innen",
             "klimaanlage": "_Innen",
+            "climatronic": "_Innen",
             "sitz": "_Innen",
             "innenspiegel": "_Innen",
             "fensterheber": "_Innen",
@@ -172,8 +177,13 @@ class Transform:
         }
 
         def map_category(feature: str) -> str:
+            f_lower = feature.lower()
+            # Special case for Lenkrad to avoid matching "rad" in "_Räder & Co"
+            if "lenkrad" in f_lower:
+                return "_Innen"
+            
             for keyword, category in KEYWORD_CATEGORY_MAP.items():
-                if keyword in feature.lower():
+                if keyword in f_lower:
                     return category
             return "_Innen" # Default to _Innen as seen in many rows
 
