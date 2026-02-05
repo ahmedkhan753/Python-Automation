@@ -56,36 +56,49 @@ class Transform:
 
     # 3️⃣ CLEAN & NORMALIZE FEATURE TEXT
     def normalize_feature_text(self, text: str) -> str:
-        # Fix broken words caused by PDF spacing (e.g., "B eifahrer" -> "Beifahrer", "S icherheit" -> "Sicherheit")
-        # Handle cases like "B eifahrer" or "S icherheit"
-        text = re.sub(r'([A-Z])\s+([a-z])', r'\1\2', text)
-        # Handle cases like "Sicher heit" (lowercase-space-lowercase) - be careful here, only if single space
-        # But for now, let's focus on the observed ones.
+        """Fix broken words, spacing issues, and remove noise labels."""
+        if not text:
+            return ""
+
+        # 1. Join single characters detached from words (e.g., "v orn", "a b", "F R", "1 5-Zoll")
+        # Handle cases like "v orn", "h inten", "a b", "i n", "f ür"
+        text = re.sub(r'\b([a-z])\s+(?=[a-z])', r'\1', text)
         
-        # Specific fixes
+        # Handle specific uppercase/model detachments like "F R", "L ED"
+        text = re.sub(r'\b([A-Z])\s+(?=[A-Z])', r'\1', text)
+        
+        # Handle number spacing in specs (e.g., "1 5-Zoll", "1 6-Zoll")
+        text = re.sub(r'\b(\d)\s+(?=\d)', r'\1', text)
+
+        # 2. Specific keyword fixes for German automotive context
         fixes = {
-            r"\bm\s+it\b": "mit",
-            r"\bT\s+SI\b": "TSI",
-            r"\bA\s+ssist\b": "Assist",
+            r"\bRegensenso\b": "Regensensor",
+            r"\bProduktion bis M ärz\b": "Produktion bis März",
             r"\bu\s+nd\b": "und",
             r"\ba\s+uf\b": "auf",
+            r"\bT\s+SI\b": "TSI",
         }
         for pattern, replacement in fixes.items():
             text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
+
+        # 3. Remove trailing noise: dashes, double dashes, especially at the end
+        # Remove patterns like "- -", "--", or lone "-" at the end of the string
+        text = re.sub(r'\s*[-–—\s]+$', '', text)
         
-        # Remove CID artifacts
+        # 4. Remove internal double dashes often used as fillers in tables
+        text = text.replace(" - -", "").replace(" --", "")
+
+        # 5. Remove CID artifacts
         text = re.sub(r"\(cid:\d+\)", "", text)
-        
-        # Remove trailing noise/hyphens
-        text = re.sub(r"\s*--.*$", "", text)
-        
-        # Remove leading bullets if they survived
+
+        # 6. Remove leading bullets if they survived
         bullets = ["•", "▪", "●", "·"]
         for b in bullets:
             text = text.replace(b, "")
-            
-        # Remove multiple spaces
+
+        # 7. Final cleanup: Remove multiple spaces
         text = re.sub(r"\s{2,}", " ", text)
+        
         return text.strip()
 
     # 4️⃣ BULLET / SYMBOL → LOGIC
