@@ -6,6 +6,12 @@ import re
 
 
 class Extract:
+    """
+    Handles extraction of data from PDF files.
+    
+    Attributes:
+        pdf_path (str): The file path to the source PDF.
+    """
     def __init__(self, pdf_path: str):
         self.pdf_path = pdf_path
 
