@@ -2,6 +2,13 @@ import pandas as pd
 import os
 
 class Load:
+    """
+    Handles loading of transformed data into Excel format.
+
+    Attributes:
+        data (pd.DataFrame): The transformed DataFrame to be saved.
+        output_path (str): The destination file path.
+    """
     def __init__(self, data: pd.DataFrame, output_path: str):
         self.data = data
         self.output_path = output_path
