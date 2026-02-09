@@ -4,6 +4,13 @@ import re
 
 
 class Transform:
+    """
+    Handles transformation and cleaning of extracted data.
+
+    Attributes:
+        table_df (pd.DataFrame): The raw DataFrame from table extraction.
+        features (list): The list of raw feature strings extracted from text.
+    """
     def __init__(self, table_df: pd.DataFrame, features: list[str]):
         self.table_df = table_df
         self.features = features
