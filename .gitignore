@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+venv/
+.idea/
+.vscode/
+excel/
+pdf/
+debug_*.py
+*.txt
+*.log
