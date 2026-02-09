@@ -1,3 +1,14 @@
+"""
+Main Entry Point for the PDF to Excel ETL Pipeline.
+
+This script orchestrates the extraction, transformation, and loading (ETL) process:
+1. Extracts tables and text features from the input PDF.
+2. Transforms and cleans the data.
+3. Loads the processed data into an Excel file with specific formatting.
+
+Usage:
+    python main.py
+"""
 from ingestion.extract import Extract
 from ingestion.transform import Transform
 from ingestion.load import Load
