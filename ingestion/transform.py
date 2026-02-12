@@ -69,16 +69,9 @@ class Transform:
 
         # 1. Join single characters (including umlauts) detached from words
         # This handles "B eifahrer", "ü ber", "v orn", "h inten", "a b", "F R", "1 5-Zoll"
-        # Join lowercase/umlaut prefixes: "v orn" -> "vorn", "ü ber" -> "über"
         text = re.sub(r'\b([a-zäöü])\s+(?=[a-zäöü])', r'\1', text)
-        
-        # Join uppercase prefixes to words: "B eifahrer" -> "Beifahrer"
         text = re.sub(r'\b([A-ZÄÖÜ])\s+(?=[a-zäöü])', r'\1', text)
-        
-        # Join uppercase models/abbreviations: "F R" -> "FR", "L ED" -> "LED"
         text = re.sub(r'\b([A-ZÄÖÜ])\s+(?=[A-ZÄÖÜ])', r'\1', text)
-        
-        # Join number spacing in specs: "1 5-Zoll" -> "15-Zoll"
         text = re.sub(r'\b(\d)\s+(?=\d)', r'\1', text)
 
         # 2. Specific keyword fixes for German automotive context
@@ -92,21 +85,22 @@ class Transform:
         for pattern, replacement in fixes.items():
             text = re.sub(pattern, replacement, text, flags=re.IGNORECASE)
 
-        # 3. Aggressive trailing noise removal
-        # Removes double dashes, lone dashes, and whitespace at the end
-        text = re.sub(r'[\s\-–—]+$', '', text)
-        
-        # 4. Remove internal double dashes often used as fillers
-        text = text.replace(" - -", "").replace(" --", "")
-
-        # 5. Remove CID artifacts
+        # 3. CID artifacts - REMOVE EARLY
         text = re.sub(r"\(cid:\d+\)", "", text)
 
-        # 6. Remove leading bullets if they survived
+        # 4. Remove leading/trailing bullets and symbols
         bullets = ["•", "▪", "●", "·"]
         for b in bullets:
             text = text.replace(b, "")
 
+        # 5. Remove internal double dashes often used as fillers
+        text = text.replace(" - -", "").replace(" --", "")
+
+        # 6. Aggressive trailing noise removal
+        # Removes dashes, dots, and whitespace at the end
+        # Added \. to remove trailing dots if they exist
+        text = re.sub(r'[\s\-–—\.]+$', '', text)
+        
         # 7. Final cleanup: Remove multiple spaces
         text = re.sub(r"\s{2,}", " ", text)
         

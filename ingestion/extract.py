@@ -37,7 +37,8 @@ class Extract:
                     continue
 
                 # Pre-clean text: handle hyphenation and CID tags
-                text = re.sub(r'(\w+)-\n\s*(\w+)', r'\1\2', text)
+                # Refined to avoid joining if followed by "und" or "oder" (e.g. "Pollen- und Staubfilter")
+                text = re.sub(r'(\w+)-\n\s*(?!(?:und|oder)\b)(\w+)', r'\1\2', text)
                 
                 for line in text.split("\n"):
                     line = line.strip()
