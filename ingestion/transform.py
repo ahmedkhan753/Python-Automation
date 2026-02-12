@@ -68,11 +68,14 @@ class Transform:
             return ""
 
         # 1. Join single characters (including umlauts) detached from words
-        # This handles "B eifahrer", "ü ber", "v orn", "h inten", "a b", "F R", "1 5-Zoll"
-        text = re.sub(r'\b([a-zäöü])\s+(?=[a-zäöü])', r'\1', text)
-        text = re.sub(r'\b([A-ZÄÖÜ])\s+(?=[a-zäöü])', r'\1', text)
-        text = re.sub(r'\b([A-ZÄÖÜ])\s+(?=[A-ZÄÖÜ])', r'\1', text)
-        text = re.sub(r'\b(\d)\s+(?=\d)', r'\1', text)
+        # Use loop to handle multiple consecutive spaces: "K l i m a" -> "Klima"
+        # Join lowercase/umlaut prefixes: "v orn" -> "vorn"
+        for _ in range(5):  # Max word length expected to have spaces
+            text = re.sub(r'\b([a-zäöü])\s+(?=[a-zäöü])', r'\1', text)
+            text = re.sub(r'\b([A-ZÄÖÜ])\s+(?=[a-zäöü])', r'\1', text)
+            text = re.sub(r'\b([A-ZÄÖÜ])\s+(?=[A-ZÄÖÜ])', r'\1', text)
+            text = re.sub(r'\b(\d)\s+(?=\d)', r'\1', text)
+            if ' ' not in text: break
 
         # 2. Specific keyword fixes for German automotive context
         fixes = {

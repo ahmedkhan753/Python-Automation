@@ -23,8 +23,10 @@ def test_cleaning():
         # 4. Bullet removal
         ("• Black Feature", "Black Feature"),
         
-        # 5. Spacing fixes (existing feature)
+        # 5. Spacing fixes (multi-space)
         ("T SI Engine", "TSI Engine"),
+        ("K l i m a a n l a g e", "Klimaanlage"),
+        ("v o r n", "vorn"),
     ]
     
     passed = 0

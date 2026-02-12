@@ -55,15 +55,11 @@ class Extract:
                         continue
 
                     # Heuristic: Valid feature lines usually have the checkmarks (cid:127) or start with a bullet.
-                    # If a line has NEITHER, it might be noise OR a wrapped line without checks.
-                    # Given the user's issue with SPLIT rows, the split parts likely HAD checks (otherwise they were skipped before).
-                    # So we assume valid content has checks or bullets.
-                    is_valid = self.detect_bullets(line) or "(cid:127)" in line
+                    # If we are in the middle of a feature, we allow lines WITHOUT checks as continuations.
+                    is_valid_start = self.detect_bullets(line) or "(cid:127)" in line
                     
-                    if not is_valid:
-                        # If we assume meaningful wrapped lines have checks, then skip. 
-                        # If we are unsure, maybe check if it looks like noise?
-                        # For now, stick to previous behavior: skip if no checks/bullets.
+                    if not is_valid_start and not current_feature:
+                        # Skip if it's not a start and we don't have a current feature
                         continue
                     
                     if self.is_new_feature(line):
@@ -72,18 +68,22 @@ class Extract:
                         current_feature = [line]
                     else:
                         # Continuation
-                        if current_feature:
-                            current_feature.append(line)
-                        else:
-                            # Valid line but not a new feature start (e.g. starts lowercase?) 
-                            # and no previous feature. Start new to be safe.
-                            current_feature = [line]
+                        current_feature.append(line)
         
         # maintain last feature
         if current_feature:
             features.append(" ".join(current_feature))
             
-        return features
+        # Post-filter to remove fragments that are just noise or common conjunctions
+        cleaned_features = []
+        noise_words = {"und", "auf", "oder", "mit", "von", "aus"}
+        for f in features:
+            f_clean = re.sub(r'[\s\-–—\.]+', '', f).lower()
+            if f_clean in noise_words or len(f_clean) < 2:
+                continue
+            cleaned_features.append(f)
+
+        return cleaned_features
 
     def is_new_feature(self, line: str) -> bool:
         if self.detect_bullets(line):
